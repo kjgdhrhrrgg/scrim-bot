@@ -12,7 +12,7 @@ class ModCan(commands.Cog):
         self,
         ctx: discord.ApplicationContext,
         team: discord.Option(str, choices = ["Gold", "Crystal", "Ruby", "Silver", "Mixed"]), # type: ignore
-        hour: discord.Option(int, choices = list(range(24))), # type: ignore
+        hour: discord.Option(int, choices = list(reversed(range(24)))), # type: ignore
         user: discord.Option(discord.Member, description = "Choose a member"), # type: ignore
         role: discord.Option(str, choices = ["main", "sub"]), # type: ignore
     ):

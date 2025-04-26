@@ -6,7 +6,7 @@ class DropAll(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.slash_command(name = "da", description = "Drop of every signed up scrim")
+    @commands.slash_command(name = "da", description = "Drop yourself of every signed up scrim")
     async def dropall(
         self,
         ctx: discord.ApplicationContext,

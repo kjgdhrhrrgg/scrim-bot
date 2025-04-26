@@ -6,12 +6,12 @@ class Can(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.slash_command(name = "c", description = "Sign up for a scrim")
+    @commands.slash_command(name = "c", description = "Sign yourself up for a scrim")
     async def c(
         self,
         ctx: discord.ApplicationContext,
         team: discord.Option(str, choices = ["Gold", "Crystal", "Ruby", "Silver", "Mixed"]), # type: ignore
-        hour: discord.Option(int, choices = list(range(24))), # type: ignore
+        hour: discord.Option(int, choices = list(reversed(range(24)))), # type: ignore
         role: discord.Option(str, choices = ["main", "sub"]), # type: ignore
     ):
         user_id = str(ctx.author.id)

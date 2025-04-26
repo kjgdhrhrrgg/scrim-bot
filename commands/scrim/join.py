@@ -70,7 +70,7 @@ class JoinView(View):
     class HourSelect(Select):
         def __init__(self, view: View):
             self.view_ref = view
-            options = [discord.SelectOption(label=str(h)) for h in range(24)]
+            options = [discord.SelectOption(label=str(h)) for h in reversed(range(24))]
             super().__init__(
                 placeholder = "Select available hours (0–23)",
                 min_values = 1,
