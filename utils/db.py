@@ -9,22 +9,31 @@ def get_db():
     os.makedirs("./data", exist_ok=True)
     return sqlite3.connect(DB_PATH)
 
-
 def init_db():
     with get_db() as c:
         c.execute("""
-                 CREATE TABLE IF NOT EXISTS signups (
-                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                 team TEXT,
-                 hour INTEGER,
-                 role TEXT,
-                 user_ids TEXT
-                 )
+            CREATE TABLE IF NOT EXISTS signups (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            team TEXT,
+            hour INTEGER,
+            role TEXT,
+            user_ids TEXT
+            )
         """)
         c.execute(""" 
             CREATE TABLE IF NOT EXISTS teams (
             name TEXT PRIMARY KEY,
             max_size INTEGER DEFAULT 6
+            )
+        """)
+
+        # Create ready table
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS ready (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                team TEXT,
+                hour INTEGER,
+                user_ids TEXT
             )
         """)
         c.commit()
@@ -83,7 +92,15 @@ def can(team, hour, user_id, role):
                     "UPDATE signups SET user_ids = ? WHERE id = ?",
                     (json.dumps(user_ids), signup_id),
                 )
-                db.commit()
+
+                if role == "main" and len(user_ids) >= 6:
+                    c.execute("INSERT INTO ready (team, hour, user_ids) VALUES (?, ?, ?)",
+                        (team, hour, json.dumps(user_ids)),
+                    )
+                    c.execute(
+                        "DELETE FROM signups WHERE team = ? AND hour = ? AND role = ?",
+                        (team, hour, role),
+                    )
 
 def drop(team, hour, user_id):
     with get_db() as db:
@@ -158,7 +175,6 @@ def get_list():
             for row in rows
         ]
         
-
 def dropall(user_id):
     with get_db() as db:
         c = db.cursor()
@@ -207,9 +223,8 @@ def dropall(user_id):
 
         db.commit()
 
-
-
 def reset():
     with get_db() as db:
         db.execute("DELETE FROM signups")
+        db.execute("DELETE FROM ready")
         db.commit()

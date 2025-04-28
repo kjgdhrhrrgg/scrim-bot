@@ -1,6 +1,9 @@
 import discord
 from discord.ext import commands
-import os
+from utils.loader import reload_cogs
+import logging
+
+logger = logging.getLogger("scrim-bot")
 
 class Reload(commands.Cog):
     def __init__(self, bot):
@@ -11,30 +14,14 @@ class Reload(commands.Cog):
     async def reload(self, ctx: discord.ApplicationContext):
         await ctx.defer(ephemeral = True)
 
-        success = []
-        failed = []
+        success, failed, timings = reload_cogs(self.bot)
 
-        # Unload and reload all extensions
-        for folder in ["commands", "listeners"]:
-            for root, dirs, files in os.walk(folder):
-                for filename in files:
-                    if filename.endswith(".py") and not filename.startswith("_"):
-                        extension = root.replace("/", ".").replace("\\", ".") + "." + filename[:-3]
-                        try:
-                            self.bot.unload_extension(extension)
-                            self.bot.load_extension(extension)
-                            success.append(extension)
-                        except Exception as e:
-                            failed.append((extension, str(e)))
-
-        # Try to sync commands
         try:
             await self.bot.sync_commands()
-            sync_message = "✅ Synced slash commands. You may need to wait ~10 seconds for changes to apply."
+            sync_message = "✅ Synced slash commands."
         except Exception as e:
             sync_message = f"❌ Failed to sync commands: {e}"
 
-        # Build the final message
         success_message = f"✅ Reloaded {len(success)} extensions."
         if failed:
             failed_message = "\n".join(f"❌ {ext}: {error}" for ext, error in failed)
@@ -43,6 +30,13 @@ class Reload(commands.Cog):
             message = f"{success_message}\n\n{sync_message}"
 
         await ctx.respond(message, ephemeral = True)
+
+        # Extra timing logs
+        if timings:
+            timings.sort(key=lambda x: x[1], reverse=True)
+            logger.info("📈 Extension Reload Times:")
+            for ext, ms in timings:
+                logger.info(f"  {ext}: {ms:.2f} ms")
 
 def setup(bot):
     bot.add_cog(Reload(bot))
