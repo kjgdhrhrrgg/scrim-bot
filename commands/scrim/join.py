@@ -31,7 +31,7 @@ class JoinView(View):
         self.role_select.update_options()
 
         embed = discord.Embed(
-            title = "Scrim Registration",
+            title = "Scrim Sign Up",
             description = "Please select your options below. Then click Submit when ready.",
             color = discord.Color.blurple(),
         )
