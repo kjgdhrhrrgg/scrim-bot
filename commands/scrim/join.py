@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 from discord.ui import View, Select, Button
+from utils.db import can 
+
 import logging
 
 class JoinView(View):
@@ -24,7 +26,6 @@ class JoinView(View):
         return self.selected_teams and self.selected_hours and self.selected_role
 
     async def update_message(self, interaction: discord.Interaction):
-        # Update the selected states visually
         self.team_select.update_options()
         self.hour_select.update_options()
         self.role_select.update_options()
@@ -42,7 +43,6 @@ class JoinView(View):
         if self.selected_role:
             embed.add_field(name = "Role", value = self.selected_role, inline = False)
 
-        # Enable/Disable Submit
         self.submit_button.disabled = not self.all_selected()
 
         await interaction.response.edit_message(embed = embed, view = self)
@@ -50,7 +50,7 @@ class JoinView(View):
     class TeamSelect(Select):
         def __init__(self, view: View):
             self.view_ref = view
-            options = [discord.SelectOption(label=label) for label in ["Gold", "Crystal", "Ruby", "Silver", "Mixed"]]
+            options = [discord.SelectOption(label = label) for label in ["Gold", "Crystal", "Ruby", "Silver", "Mixed"]]
             super().__init__(
                 placeholder = "Select your teams",
                 min_values = 1,
@@ -70,7 +70,7 @@ class JoinView(View):
     class HourSelect(Select):
         def __init__(self, view: View):
             self.view_ref = view
-            options = [discord.SelectOption(label=str(h)) for h in reversed(range(24))]
+            options = [discord.SelectOption(label = str(h)) for h in reversed(range(24))]
             super().__init__(
                 placeholder = "Select available hours (0–23)",
                 min_values = 1,
@@ -91,8 +91,8 @@ class JoinView(View):
         def __init__(self, view: View):
             self.view_ref = view
             options = [
-                discord.SelectOption(label="Main"),
-                discord.SelectOption(label="Sub"),
+                discord.SelectOption(label = "Main"),
+                discord.SelectOption(label = "Sub"),
             ]
             super().__init__(
                 placeholder = "Select your role",
@@ -122,15 +122,17 @@ class JoinView(View):
 
         async def callback(self, interaction: discord.Interaction):
             summary = (
-                f"✅ **Registration Complete!**\n"
+                f"✅ **Signup complete!**\n"
                 f"**Teams:** {', '.join(self.view_ref.selected_teams)}\n"
                 f"**Hours:** {', '.join(self.view_ref.selected_hours)}\n"
                 f"**Role:** {self.view_ref.selected_role}"
             )
-            logging.info(f"{interaction.user} registered: {summary.replace('✅ **Registration Complete!**\\n', '')}")
-
+            logging.info(f"{interaction.user} signed up: {summary.replace('✅ **Signup complete!**\\n', '')}")
+            for team in self.view_ref.selected_teams:
+                for hour in self.view_ref.selected_hours:
+                   can(team = team, hour = hour, user_id = str(interaction.user.id), role = self.view_ref.selected_role.lower())
             embed = discord.Embed(
-                title = "Registration Submitted",
+                title = "Signup Submitted",
                 description = summary,
                 color = discord.Color.green(),
             )
@@ -140,15 +142,15 @@ class Join(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.slash_command(name = "join", description = "Join multiple scrims.")
+    @commands.slash_command(name = "join", description = "Sign yourself up for multiple scrims.")
     async def join(self, ctx: discord.ApplicationContext):
         view = JoinView()
         embed = discord.Embed(
-            title = "Scrim Registration",
+            title = "Scrim Signup",
             description = "Please select your options below. Then click Submit when ready.",
             color = discord.Color.blurple(),
         )
-        await ctx.respond(embed = embed, view = view, ephemeral = True)  # <<< ephemeral = True
+        await ctx.respond(embed = embed, view = view, ephemeral = True)
 
 def setup(bot):
     bot.add_cog(Join(bot))

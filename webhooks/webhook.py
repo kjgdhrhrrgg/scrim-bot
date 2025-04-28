@@ -59,7 +59,7 @@ async def format_signups():
 
 async def refresh_webhook():
     async with aiohttp.ClientSession() as session:
-        webhook = discord.Webhook.from_url(SCRIM_WEBHOOK_URL, session=session)
+        webhook = discord.Webhook.from_url(SCRIM_WEBHOOK_URL, session = session)
 
         content = await format_signups()
 
@@ -81,5 +81,5 @@ async def refresh_webhook():
 async def webhook_updater(bot):
     await bot.wait_until_ready()
     while not bot.is_closed():
-        bot.loop.create_task(refresh_webhook())  # 🧠 Just spawn lightweight task
-        await asyncio.sleep(15)  # ⏲ Every 15 seconds
+        bot.loop.create_task(refresh_webhook())  
+        await asyncio.sleep(15)  

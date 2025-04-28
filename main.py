@@ -23,7 +23,6 @@ intents.message_content = True
 intents.members = True
 intents.guilds = True
 intents.guild_messages = True
-
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Initialize DB
@@ -44,7 +43,7 @@ for folder in ["commands", "listeners"]:
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user} ({bot.user.id})")
-    await bot.change_presence(activity=discord.Game(name="Scrim Signups"))
+    await bot.change_presence(activity = discord.Game(name="Scrim Signups"))
     await bot.sync_commands()
     logger.info("✅ Synced commands")
     logger.info("✅ Starting webhook updater...")
