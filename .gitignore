@@ -165,3 +165,4 @@ backups/
 data/
 .json
 *.db
+.DS_Store
