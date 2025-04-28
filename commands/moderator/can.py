@@ -20,7 +20,7 @@ class ModCan(commands.Cog):
         try:
             db.can(team = team, hour = hour, user_id = user_id, role=role)
             await ctx.respond(
-                f"✅ {ctx.author.mention} signed up for {team} at {hour}:00 as {role}.",
+                f"✅ {user.mention} signed up for {team} at {hour}:00 as {role}.",
                 ephemeral = True,
             )
         except Exception as e:
