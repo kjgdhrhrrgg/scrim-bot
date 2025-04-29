@@ -91,7 +91,7 @@ async def format_signups():
 
         content_blocks.append("\n".join(full_lus_content))
 
-    content_blocks.append(f"Last updated: <t:{timestamp}>")
+    content_blocks.append(f"Last updated: <t:{timestamp}:R>")
     return "\n".join(content_blocks)
 
 async def refresh_webhook():
