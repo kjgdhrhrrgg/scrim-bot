@@ -42,6 +42,14 @@ def can(team, hour, user_id, role):
     with get_db() as db:
         c = db.cursor()
 
+        # Check if user is already in a ready scrim for this hour
+        c.execute("SELECT user_ids FROM ready WHERE hour = ?", (hour,))
+        ready_rows = c.fetchall()
+        for row in ready_rows:
+            ready_user_ids = json.loads(row[0])
+            if user_id in ready_user_ids:
+                raise ValueError("You are already locked in a ready scrim at this hour.")
+
         # Ensure both roles exist
         for r in ["main", "sub"]:
             c.execute(
@@ -93,14 +101,34 @@ def can(team, hour, user_id, role):
                     (json.dumps(user_ids), signup_id),
                 )
 
+                # Check if main role is full and handle ready logic
                 if role == "main" and len(user_ids) >= 6:
-                    c.execute("INSERT INTO ready (team, hour, user_ids) VALUES (?, ?, ?)",
+                    c.execute(
+                        "INSERT INTO ready (team, hour, user_ids) VALUES (?, ?, ?)",
                         (team, hour, json.dumps(user_ids)),
                     )
+
+                    # Check if sub is also empty before deleting
                     c.execute(
-                        "DELETE FROM signups WHERE team = ? AND hour = ? AND role = ?",
-                        (team, hour, role),
+                        "SELECT user_ids FROM signups WHERE team = ? AND hour = ? AND role = ?",
+                        (team, hour, "sub"),
                     )
+                    sub_row = c.fetchone()
+                    if sub_row:
+                        sub_user_ids = json.loads(sub_row[0])
+                        if not sub_user_ids:
+                            c.execute(
+                                "DELETE FROM signups WHERE team = ? AND hour = ? AND role IN (?, ?)",
+                                (team, hour, "main", "sub"),
+                            )
+                    else:
+                        c.execute(
+                            "DELETE FROM signups WHERE team = ? AND hour = ? AND role = ?",
+                            (team, hour, role),
+                        )
+
+        db.commit()
+
 
 def drop(team, hour, user_id):
     with get_db() as db:
@@ -156,24 +184,36 @@ def drop(team, hour, user_id):
 
         db.commit()
 
-def get_list():
+def get_list(table):
     with get_db() as db:
         c = db.cursor()
-        c.execute("SELECT * FROM signups")
+        c.execute(f"SELECT * FROM {table}")
         rows = c.fetchall()
-    
+
         if not rows:
             return []
 
-        return [
-            {
-                "team": row[1],
-                "hour": row[2],
-                "role": row[3],
-                "user_ids": json.loads(row[4]),
-            }
-            for row in rows
-        ]
+        if table == "signups":
+            return [
+                {
+                    "team": row[1],
+                    "hour": row[2],
+                    "role": row[3],
+                    "user_ids": json.loads(row[4]),
+                }
+                for row in rows
+            ]
+        elif table == "ready":
+            return [
+                {
+                    "team": row[1],
+                    "hour": row[2],
+                    "user_ids": json.loads(row[3]),
+                }
+                for row in rows
+            ]
+        else:
+            raise ValueError("Unknown table name")
         
 def dropall(user_id):
     with get_db() as db:

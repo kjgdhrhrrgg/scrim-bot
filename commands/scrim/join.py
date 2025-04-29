@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord.ui import View, Select, Button
-from utils.db import can 
+from utils.db import can
 
 import logging
 
@@ -121,21 +121,40 @@ class JoinView(View):
             self.view_ref = view
 
         async def callback(self, interaction: discord.Interaction):
-            summary = (
-                f"✅ **Signup complete!**\n"
-                f"**Teams:** {', '.join(self.view_ref.selected_teams)}\n"
-                f"**Hours:** {', '.join(self.view_ref.selected_hours)}\n"
-                f"**Role:** {self.view_ref.selected_role}"
-            )
-            logging.info(f"{interaction.user} signed up: {summary.replace('✅ **Signup complete!**\\n', '')}")
+            skipped = set()
+            success = set()
             for team in self.view_ref.selected_teams:
                 for hour in self.view_ref.selected_hours:
-                   can(team = team, hour = hour, user_id = str(interaction.user.id), role = self.view_ref.selected_role.lower())
+                    try:
+                        can(team = team, hour = int(hour), user_id = str(interaction.user.id), role = self.view_ref.selected_role.lower())
+                        success.add(int(hour))
+                    except Exception as e:
+                        skipped.add(int(hour))
+
             embed = discord.Embed(
-                title = "Signup Submitted",
-                description = summary,
+                title = "Signup Summary",
                 color = discord.Color.green(),
             )
+            if success:
+                sorted_hours = sorted(success)
+                embed.add_field(
+                    name="✅ Signup Successful",
+                    value=(
+                        f"You successfully signed up as **{self.view_ref.selected_role}** "
+                        f"for the following teams: **{', '.join(self.view_ref.selected_teams)}**\n\n" +
+                        "\n".join(f"{hour}:00" for hour in sorted_hours)
+                    ),
+                    inline=False,
+                )
+            if skipped:
+                embed.add_field(
+                    name="⚠️ Already Signed Up",
+                    value=(
+                        "You are already signed up for a scrim at these times:\n" +
+                        "\n".join(f"{hour}:00" for hour in sorted(skipped))
+                    ),
+                    inline=False,
+        )
             await interaction.response.edit_message(embed = embed, view = None)
 
 class Join(commands.Cog):
